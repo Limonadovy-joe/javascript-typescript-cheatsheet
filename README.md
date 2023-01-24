@@ -6,7 +6,11 @@
   - [What does the type narrowing mean ?](#type-narrowing)
   - [In operator narrowing](#in-operator-narrowing)
     - [Use case: discriminated union](#use-case-discriminated-union)
-    - [Optional properties](#optional-properties) 
+    - [Optional properties](#optional-properties)
+- [FAQ Typescript](#faq-typescript)
+  - [How can i change readonly property in TS?](#how-can-i-change-readonly-property-in-ts)
+  - [Property 'x' has no initializer and is not assigned in the ctor?](#property-'x'-has-no-initializer-and-is-not-assigned-in-the-ctor)  
+  - [How to use setter in ctors?](#how-to-use-setters-in-ctors)
 - [Functional programming using FP-TS](#Functional-programming-using-FP-TS)
   - [Reader monad](#Reader-monad)
 
@@ -73,3 +77,107 @@ const authenticate = (auth: Authenticator | AuthenticatorFacebook | Authenticato
   }
 }
 ```
+
+## FAQ Typescript
+
+### How can i change readonly property in TS?
+Typescript provides `readonly` keyword which allows setting value on **initialization** or in **constructor function** only.
+```ts
+
+```
+### Property 'x' has no initializer and is not assigned in the ctor?
+It's because of `Strict Class Initialization` flag which has been introduced in TS 2.7. version.
+```ts
+class LogEntriesSerializerV2 {
+  // Property '_entries' has no initializer and is not definitely assigned in the constructor.ts(2564)
+  private _entries: LogEntries[];
+
+  private setEntries(entries: EntryDate | EntryDate[] | Entry | Entry[]) {
+    if (isEntry(entries) || isEntryDate(entries)) {
+      this._entries = [entries];
+    } else {
+      this._entries = entries;
+    }
+  }
+
+  set entries(entries: EntryDate | EntryDate[] | Entry | Entry[]) {
+    this.setEntries(entries);
+  }
+
+  constructor(entries: Entry | Entry[]);
+  constructor(entries: EntryDate | EntryDate[]);
+  constructor(entries: EntryDate | EntryDate[] | Entry | Entry[]) {
+    this.setEntries(entries);
+  }
+}
+```
+To fix the error, use the method below - assigment in constructor.
+```ts
+class LogEntriesSerializerV2 {
+   entries: LogEntries[];
+
+
+  constructor(entries: Entry | Entry[]);
+  constructor(entries: EntryDate | EntryDate[]);
+  constructor(entries: EntryDate | EntryDate[] | Entry | Entry[]) {
+    // refactor - use factory method instead of overloaded ctors
+    if (isEntry(entries) || isEntryDate(entries)) {
+      this.entries = [entries];
+    } else {
+      this.entries = entries;
+    }
+  }
+}
+```
+### How to use setters in ctors?
+Setters and getters should not be called explicitly. The setter is automatically invoked when you assign a value to the property `this.name = name`. Many times some logic is located in setters and as general rule, it is usually better to **seperate validation or transformation(map) logic from data objects - separation of concerns - SOC**.
+
+```ts
+set name(newName: string){
+
+}
+```
+
+Make a validator class and have it accept and examine some Person object. 
+
+```ts
+interface LogRecord {
+  readonly message: string;
+  toString(): string;
+}
+
+export interface Entry extends LogRecord {
+  readonly time: Date;
+  readonly level: Level;
+}
+
+export interface EntryDate extends LogRecord {
+  readonly message: string;
+  readonly date: Date;
+}
+
+type LogEntries = Entry | EntryDate;
+
+ export class Entry implements Entry {
+   toString(): string {
+     return `${this.level} - ${this.time}: ${this.message}`;
+   }
+   constructor(readonly message: string, readonly time: Date, readonly level: Level) {}
+ }
+
+export class EntryDate implements EntryDate {
+  toString(): string {
+    return `${this.date.toString()}: ${this.message}`;
+  }
+  constructor(readonly message: string, readonly date: Date) {}
+```
+In this case: its better to have own class that has the responsibility of tranforming object to string: 
+
+
+
+
+
+
+
+
+
