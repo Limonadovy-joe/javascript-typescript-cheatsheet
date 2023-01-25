@@ -297,7 +297,7 @@ const personValidator: PersonValidator = {
             required: true,
             validator: {
               _tag: 'string',
-              pattern: /[A-Z]/g
+              pattern: /[0-9]/g
             }
           },
           {
