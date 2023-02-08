@@ -2,6 +2,9 @@
 
 
 ## Contents
+- [Testing static types](#testing-static-types)
+  - [Simple solutions](#static-types-simple-solutions)
+  - [Testing via code](#static-types-testing-libs)
 - [Type narrowing](#type-narrowing)
   - [What does the type narrowing mean ?](#type-narrowing)
   - [In operator narrowing](#in-operator-narrowing)
@@ -16,6 +19,70 @@
     - Validator object[#validator-object]
 - [Functional programming using FP-TS](#Functional-programming-using-FP-TS)
   - [Reader monad](#Reader-monad)
+
+
+## Testing static types
+When it comes to TypeScript code:
+- There are many options for testing its behavoir at runtime
+- There are far fewer options options for testing its **compile-type types**
+
+### Simple solutions
+Do not use comments to check if the result is as intended as this  is very prone to make typos in comments... 
+```ts
+type User = {
+    firstName: string;
+    age: number;
+    isAdult: boolean;
+    x: string;
+  };
+
+type CoordsTest = {
+    x: number;
+    y: number;
+    isSerializable: boolean;
+  };
+  
+type SimpleMergeIntersectionV1 = SimpleMergeIntersection<CoordsTest, User>;
+//   type UserWithCoordsV2 = {
+//     isAdult: boolean;
+//     x: string;
+//     y: number;
+//     isSerializable: boolean;
+//     firstName: string;
+//     age: number;
+// }
+```
+We should look for automated check. 
+
+### Testing via code
+Some type testing libraries implement type checks in TS and lets us use them in our code.
+
+`tsd` 
+- is a tool for running tests againts `.d.ts` files and also it **performs custom compilation** to check its type assertions.
+- checking for errors: we check for erros via the function `expectError()`
+
+```ts
+import { expectType } from 'tsd';
+
+type User = {
+  firstName: string;
+  age: number;
+  isAdult: boolean;
+  x: string;
+};
+
+type CoordsTest = {
+  x: number;
+  y: number;
+  isSerializable: boolean;
+};
+
+declare const test: SimpleMergeIntersection<CoordsTest, User>;
+
+type UserWithCoordsIntersection = { x: string };
+expectType<UserWithCoordsIntersection>(test);
+
+```
 
 
 ## Type narrowing
