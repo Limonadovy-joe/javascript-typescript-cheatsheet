@@ -3,8 +3,8 @@
 
 ## Contents
 - [Testing static types](#testing-static-types)
-  - [Simple solutions](#static-types-simple-solutions)
-  - [Testing via code](#static-types-testing-libs)
+  - [Simple solutions](#simple-solutions)
+  - [Testing via code](#testing-via-code)
 - [Type narrowing](#type-narrowing)
   - [What does the type narrowing mean ?](#type-narrowing)
   - [In operator narrowing](#in-operator-narrowing)
