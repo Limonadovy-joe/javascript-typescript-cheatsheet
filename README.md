@@ -2,6 +2,11 @@
 
 
 ## Contents
+- [Type manipulation](#type-manipulation)
+  - [Type infering](#type-infering)
+    - [Make types in terms of values that we already have](#make-types-in-terms-of-values-that-we-already-have)
+      - [Skip redundant interface definiton](#skip-redundant-interface-definiton)
+      - [Algebraic data type: Enumerated values](#algebraic-data-type-enumerated-values) 
 - [Testing static types](#testing-static-types)
   - [Simple solutions](#simple-solutions)
   - [Testing via code](#testing-via-code)
@@ -19,6 +24,50 @@
     - Validator object[#validator-object]
 - [Functional programming using FP-TS](#Functional-programming-using-FP-TS)
   - [Reader monad](#Reader-monad)
+
+## Type manipulation
+Typescript's type system allows expressing types in terms of `other types`. The simplest form of this idea is generic.
+We actually have at our disposal a wide variety of `type operators`: `keyof operator`, `typeof operator`, `Type['a'] - index access type` and so on...
+
+### Type infering
+**Type infering** - enables the compiler to generate **type interfaces in the compile-time** and check the correctness of the implementation.
+In short, it is a Typescript feature that **can obtain, infer data types from your code implementation**.
+Typescript checks the code, infer types of variables, and performs static analysis.
+This is a crucial feature that seperates Typescript from other type-safe programming languages.
+
+This Typescript feature tries to avoid situations where programmers have to create type interface APIs for almost everything and then implement business logic compatiable with these interface declarations.
+This is suiteable for quick prototyping in the application layer.
+
+### Make types in terms of values that we already have
+
+#### Skip redundant interface definiton
+Every time you create a type interface, you start to duplicate your code.
+
+Dont:
+```ts
+type User = {
+    username: string;
+    age: number;
+  };
+
+const user: User = {
+    username: 'joe',
+    age: 10
+  };
+```
+You should use `typeof` operator.
+
+Do:
+```ts
+type User = typeof user;
+
+const user = {
+    username: 'joe',
+    age: 10
+  };
+```
+#### Algebraic data type: Enumerated values
+One of the best features of Typescript is `Pattern matching` based on `enumerated values`.
 
 
 ## Testing static types
