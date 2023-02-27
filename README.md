@@ -88,6 +88,8 @@ One of the best features of Typescript is `Pattern matching` based on `enumerate
         [field]: fun(value)
       } as { [K in F]: R });
 
+  const createEnv = <E extends string>(env: E) => ({ env: env });
+
   /**
    * Infrastructure types
    *
@@ -122,7 +124,7 @@ One of the best features of Typescript is `Pattern matching` based on `enumerate
   /**
    * Node config
    */
-  const NODE = { ...nodePorted, ...nodeEnvironmented };
+  const NODE = { ...nodePorted, ...nodeEnvironmented, ...createEnv('node') } as const;
   type NODE = typeof NODE;
 
   /**
@@ -161,17 +163,40 @@ One of the best features of Typescript is `Pattern matching` based on `enumerate
   /**
    * Postgres config
    */
-  const POSTGRES = { ...postgresHosted, ...postgresPassworded, ...postgresPorted };
+  const POSTGRES = { ...postgresHosted, ...postgresPassworded, ...postgresPorted, ...createEnv('postgres') } as const;
   type POSTGRES = typeof POSTGRES;
+
+  /**
+   * MYSQL
+   */
+  const MYSQL = { ...postgresPorted, HOST: 'MYSQL_HOST', PASSWORD: 'MYSQL_PASSWORD', ...createEnv('mysql') } as const;
+  type MYSQL = typeof MYSQL;
+
+  /**
+   * Database
+   */
+  type DATABASE = MYSQL | POSTGRES;
 
   /**
    * Application environments
    */
-  const APP_ENV = {
-    node: { ...NODE },
-    postgres: { ...POSTGRES }
-  };
+
+  const APP_ENV = { node: { ...NODE } as NODE, database: { ...POSTGRES } as DATABASE } as const;
   type APP_ENV = typeof APP_ENV;
+```
+Pattern matching: 
+```ts
+const printDatabaseInfo = (db: DATABASE) => (log: typeof console.log) => {
+    switch (db.env) {
+      case 'postgres':
+        log(`env: ${db.env},${db.HOST}, PORT: ${db.PORT}`);
+        break;
+      case 'mysql':
+        log(`PORT: ${db.PORT}, ${db.HOST}, env: ${db.env}, `);
+        break;
+    }
+  };
+}
 ```
 
 
