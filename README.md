@@ -68,6 +68,111 @@ const user = {
 ```
 #### Algebraic data type: Enumerated values
 One of the best features of Typescript is `Pattern matching` based on `enumerated values`.
+```ts
+/**
+   * Utility type
+   */
+
+  /**
+   * RecordToUnion
+   */
+  type RecordToUnion<R extends Record<string | number, unknown>> = keyof R;
+
+  type FunctionType = (...args: any[]) => any;
+  type ReturnType<F> = F extends (...args: any[]) => infer R ? R : never;
+
+  const createObject =
+    <F extends string, L extends unknown>([field, value]: [F, L] | readonly [F, L]) =>
+    <Fun extends FunctionType, R extends ReturnType<Fun>>(fun: Fun): { [K in F]: R } =>
+      ({
+        [field]: fun(value)
+      } as { [K in F]: R });
+
+  /**
+   * Infrastructure types
+   *
+   */
+
+  /**
+   * Node environments enum
+   */
+  const NODE_ENV = { production: 'production', development: 'development:', test: 'test' } as const;
+  type NODE_ENV = RecordToUnion<typeof NODE_ENV>;
+
+  /**
+   * Data constructor for node environments
+   */
+  const createNodeEnv = (env: NODE_ENV): NODE_ENV => env;
+
+  const nodeEnvironmented = createObject(['ENV', 'production'] as const)(createNodeEnv);
+
+  /**
+   * Node ports enum
+   */
+  const NODE_PORT = { 3000: 3000, 4000: 40000 } as const;
+  type NODE_PORT = RecordToUnion<typeof NODE_PORT>;
+
+  /**
+   * Data constructor for node ports
+   */
+  const createNodePort = (port: NODE_PORT): NODE_PORT => port;
+
+  const nodePorted = createObject(['PORT', 3000])(createNodePort);
+
+  /**
+   * Node config
+   */
+  const NODE = { ...nodePorted, ...nodeEnvironmented };
+  type NODE = typeof NODE;
+
+  /**
+   * Postgres
+   */
+
+  const POSTGRES_HOST = 'POSTGRES_HOST';
+  type POSTGRES_HOST = typeof POSTGRES_HOST;
+  /**
+   * Data constructor
+   */
+  const createPostgresHost = (host: POSTGRES_HOST): POSTGRES_HOST => host;
+
+  const postgresHosted = createObject(['HOST', POSTGRES_HOST])(createPostgresHost);
+
+  const POSTGRES_PASSWORD = 'POSTGRES_PASSWORD';
+  type POSTGRES_PASSWORD = typeof POSTGRES_PASSWORD;
+
+  /**
+   * Data constructor
+   */
+  const createPostgresPassword = (password: POSTGRES_PASSWORD): POSTGRES_PASSWORD => password;
+
+  const postgresPassworded = createObject(['PASSWORD', POSTGRES_PASSWORD])(createPostgresPassword);
+
+  const POSTGRES_PORT = { 5432: 5432 };
+  type POSTGRES_PORT = RecordToUnion<typeof POSTGRES_PORT>;
+
+  /**
+   * Data constructor
+   */
+  const createPostgresPort = (port: POSTGRES_PORT): POSTGRES_PORT => port;
+
+  const postgresPorted = createObject(['PORT', POSTGRES_PORT])(createPostgresPort);
+
+  /**
+   * Postgres config
+   */
+  const POSTGRES = { ...postgresHosted, ...postgresPassworded, ...postgresPorted };
+  type POSTGRES = typeof POSTGRES;
+
+  /**
+   * Application environments
+   */
+  const APP_ENV = {
+    node: { ...NODE },
+    postgres: { ...POSTGRES }
+  };
+  type APP_ENV = typeof APP_ENV;
+```
 
 
 ## Testing static types
