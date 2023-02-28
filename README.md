@@ -6,7 +6,8 @@
   - [Type infering](#type-infering)
     - [Make types in terms of values that we already have](#make-types-in-terms-of-values-that-we-already-have)
       - [Skip redundant interface definiton](#skip-redundant-interface-definiton)
-      - [Algebraic data type: Enumerated values](#algebraic-data-type-enumerated-values) 
+      - [Algebraic data type: Enumerated values](#algebraic-data-type-enumerated-values)
+      - [Use as const for constant values](#use-as-const-for-constant-values)
 - [Testing static types](#testing-static-types)
   - [Simple solutions](#simple-solutions)
   - [Testing via code](#testing-via-code)
@@ -197,6 +198,16 @@ const printDatabaseInfo = (db: DATABASE) => (log: typeof console.log) => {
     }
   };
 }
+```
+#### Use as const for constant values
+Typescript has `as const` syntax that helps with defining constant values. This feature makes a general type such as `string` to more specific type such as `literal string`;
+```ts
+const Configuration = {
+  serverPort: 1337,
+  dbPort: 5432,
+};
+
+type Configuration = typeof Configuration;
 ```
 
 
