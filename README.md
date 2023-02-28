@@ -2,6 +2,14 @@
 
 
 ## Contents
+- [Enums](#enums)
+  - [The basics](#the-basics)
+  - [Use cases for enums](#use-cases-for-enums)
+    - [Bit patterns/flag](#bit-patterns)
+    - [Multiple constants](#multiple-constants)
+    - [More self-descriptive than booleans](#more-self-descriptive-than-booleans)
+    - [Better string constants](#Better-string-constants)
+  - [Alternatives to enums]
 - [Type manipulation](#type-manipulation)
   - [Type infering](#type-infering)
     - [Make types in terms of values that we already have](#make-types-in-terms-of-values-that-we-already-have)
@@ -25,6 +33,26 @@
     - Validator object[#validator-object]
 - [Functional programming using FP-TS](#Functional-programming-using-FP-TS)
   - [Reader monad](#Reader-monad)
+
+## Enums
+### The Basics
+The enumerator names are usually **identifiers that beheve as constants** in the language. In some languages, the declaration of an enumereted type also intentionally defines an ordering of its members(are implicitly represented as integers), in others, the enumerators are unordered.
+`Boolean type` is ofen a pre-defined enum.
+
+An enumerated type can be seen as a degenerate case: **a tagged union of unit types**.
+
+**Unit type** is a type that allows only one value.
+In JS `Undefined` - its only value `undefined` and the same applies to `Null`.
+
+An enumerated type is a special case of **sum type** in which the constructors take no arguments, as exactly one value is defined for each constructor.
+
+**Nullary constructor** - is a constructor that takes no arguments. If a constructor does not take any data arguments, it is nullary.
+```ts
+const nullaryDataConstructor = O.none;
+const unaryDataConstructor O.some(1);
+```
+
+
 
 ## Type manipulation
 Typescript's type system allows expressing types in terms of `other types`. The simplest form of this idea is generic.
