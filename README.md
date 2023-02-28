@@ -4,12 +4,18 @@
 ## Contents
 - [Enums](#enums)
   - [The basics](#the-basics)
+  - [Downsides of using enums]
   - [Use cases for enums](#use-cases-for-enums)
     - [Bit patterns/flag](#bit-patterns)
     - [Multiple constants](#multiple-constants)
     - [More self-descriptive than booleans](#more-self-descriptive-than-booleans)
     - [Better string constants](#Better-string-constants)
-  - [Alternatives to enums]
+  - [Alternatives to enums](#alternatives-to-enums)
+    - [Unions of singleton values](#unions-of-singleton-values)
+      - [Primitive literal types](#primitive-literal-types)
+    - [Discriminated unions](#discriminated-unions)
+    - [Object literals as enums](#object-literals-as-enums)
+      - [Object literals with string-valued properties](#object-literals-with-string-valued-properties)    
 - [Type manipulation](#type-manipulation)
   - [Type infering](#type-infering)
     - [Make types in terms of values that we already have](#make-types-in-terms-of-values-that-we-already-have)
@@ -36,6 +42,8 @@
 
 ## Enums
 ### The Basics
+An enums maps member names to member values. Namespace for constant values.
+
 The enumerator names are usually **identifiers that beheve as constants** in the language. In some languages, the declaration of an enumereted type also intentionally defines an ordering of its members(are implicitly represented as integers), in others, the enumerators are unordered.
 `Boolean type` is ofen a pre-defined enum.
 
@@ -61,6 +69,50 @@ https://exploringjs.com/tackling-ts/ch_enums.html#use-cases-for-enums
 https://exploringjs.com/tackling-ts/ch_enums.html#use-cases-for-enums
 #### Better string constants
 https://exploringjs.com/tackling-ts/ch_enums.html#use-cases-for-enums
+
+### Alternatives to enums
+
+#### Unions of singleton values
+The `Singleton type` is a type with one element. 
+
+##### Primitive literal types
+Primitive literal types are `singleton types`.
+```ts
+type BigInt = 1234n; // --target must be ES2020+
+type String = 'abc';
+```
+Two use-cases for `primitive literal types` are:
+- `Overloading on string parameters - event handling` which enables the first argument of the following method call to determine the type of the second argument.
+```ts
+function addEventListener(elem: HTMLElement, type: 'click',
+  listener: (event: MouseEvent) => void): void;
+function addEventListener(elem: HTMLElement, type: 'keypress',
+  listener: (event: KeyboardEvent) => void): void;
+function addEventListener(elem: HTMLElement, type: string,  // (A)
+  listener: (event: any) => void): void {
+    elem.addEventListener(type, listener); // (B)
+  }
+```
+This allows us to change the type parameter of `listener` depending on the value of parameter `type`.
+
+- We can use a union of primitive literal types to define a type by enumerating its members:
+```ts
+type NODE_ENV = 'production' | 'development' | 'test';
+type Direction = 'Up' | 'Down';
+```
+
+#### Discriminated unions
+
+#### Object literals as enums
+
+##### Object literals with string-valued properties
+```ts
+const NODE_ENV = { production: 'production', development: 'development:', test: 'test' } as const;
+type NODE_ENV = typeof NODE_ENV[keyof typeof NODE_ENV];
+```
+
+
+
 
 
 ## Type manipulation
