@@ -205,9 +205,13 @@ Typescript has `as const` syntax that helps with defining constant values. This 
 const Configuration = {
   serverPort: 1337,
   dbPort: 5432,
-};
+} as const;
 
 type Configuration = typeof Configuration;
+// type Configuration = {
+//    readonly serverPort: 1337;
+//    readonly dbPort: 5432;
+// }
 ```
 
 
