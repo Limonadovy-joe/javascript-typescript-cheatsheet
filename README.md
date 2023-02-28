@@ -52,6 +52,15 @@ const nullaryDataConstructor = O.none;
 const unaryDataConstructor O.some(1);
 ```
 
+### Use-cases for enums
+#### Bit patterns/flag
+https://exploringjs.com/tackling-ts/ch_enums.html#use-cases-for-enums
+#### Multiple constants
+https://exploringjs.com/tackling-ts/ch_enums.html#use-cases-for-enums
+#### More self-descriptive than booleans
+https://exploringjs.com/tackling-ts/ch_enums.html#use-cases-for-enums
+#### Better string constants
+https://exploringjs.com/tackling-ts/ch_enums.html#use-cases-for-enums
 
 
 ## Type manipulation
