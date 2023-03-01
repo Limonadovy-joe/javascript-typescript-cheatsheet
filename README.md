@@ -4,6 +4,7 @@
 ## Contents
 - [Enums](#enums)
   - [The basics](#the-basics)
+  - [Enums at runtime](#enums-at-runtime)
   - [Downsides of enums](#downsides-of-enums)
     - [Downside: logging](#downside-logging)
     - [Downside: loosse type checking](#downside-loosse-type-checking)
@@ -61,6 +62,43 @@ An enumerated type is a special case of **sum type** in which the constructors t
 const nullaryDataConstructor = O.none;
 const unaryDataConstructor O.some(1);
 ```
+
+### Enums at runtime
+TS compiles enums to JS objects.
+
+The normal mapping is from enum member to member values:
+
+```ts
+enum FilePermission {
+  READ,
+  WRITE
+}
+
+console.log(FilePermission.READ === 0); //true
+```
+Numeric enums also support a `reverse mapping` from member values to member names.
+
+```ts
+enum FilePermission {
+  READ,
+  WRITE
+}
+
+console.log(FilePermission[0] === 'READ'); //true
+```
+One use case for reverse mapping is printing the name of enum member.
+
+```ts
+enum FilePermission {
+  READ,
+  WRITE
+}
+
+const transformFilePermission = (filePerm: FilePermission) => `FilePermission.${FilePermission[filePerm]}`;
+console.log(transformFilePermission(FilePermission.READ) === 'FilePermission.READ');
+```
+String-based enums have a simpler representation at runtime. TS does not support reverse mapping for string-based enums.
+
 
 ### Downsides of enums
 While enums can be useful in TS, there are a few downsides to consider:
