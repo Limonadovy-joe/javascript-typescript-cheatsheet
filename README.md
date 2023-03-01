@@ -5,8 +5,8 @@
 - [Enums](#enums)
   - [The basics](#the-basics)
   - [Downsides of enums](#downsides-of-enums)
-    - [Downside:logging](#downside:logging)
-    - [Downside:loosse type-checking](#downside:loosse-type-checking)
+    - [Downside: logging](#downside-logging)
+    - [Downside: loosse type checking](#downside-loosse-type-checking)
   - [Use cases for enums](#use-cases-for-enums)
     - [Bit patterns/flag](#bit-patterns)
     - [Multiple constants](#multiple-constants)
@@ -68,7 +68,7 @@ While enums can be useful in TS, there are a few downsides to consider:
 - Enums can bloat your code. Enums in TS are implemented as objects with string key mapping to number values. This can add a lot of extra code to your project.
 - Enums can be confusing: Enums can be used to represent both numeric and string values.
 
-#### Downside:logging
+#### Downside: logging
 When logging members of numeric enums, we only see numbers.
 ```ts
 enum FilePermission {
@@ -79,7 +79,7 @@ console.log(FilePermission.READ)  //0
 console.log(FilePermission.WRITE);  //1
 ```
 
-#### Downside:loosse type-checking
+#### Downside: loosse type checking
 When using enum as a type, the values that are allowed statically are not just those of the enum members - any number is accepted:
 ```ts
 enum FilePermission {
