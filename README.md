@@ -25,6 +25,10 @@
       - [Skip redundant interface definiton](#skip-redundant-interface-definiton)
       - [Algebraic data type: Enumerated values](#algebraic-data-type-enumerated-values)
       - [Use as const for constant values](#use-as-const-for-constant-values)
+    - [Custom generic utils](#custom-generic-utils)
+      - [AsyncReturnType](#AsyncReturnType)
+      - [Asyncify](#Asyncify)
+      - [RecursivePartial](#RecursivePartial)
 - [Testing static types](#testing-static-types)
   - [Simple solutions](#simple-solutions)
   - [Testing via code](#testing-via-code)
@@ -371,6 +375,95 @@ type Configuration = typeof Configuration;
 //    readonly serverPort: 1337;
 //    readonly dbPort: 5432;
 // }
+```
+
+### Custom generic utils
+#### AsyncReturnType
+
+```ts
+const getUserMock = async () => ({
+    data: {
+      1: {
+        userName: 'joe',
+        password: 'pw123',
+        email: 'Limonadovyjoe@microsoft.com',
+        company: 'Microsoft',
+        phone: '602459802',
+        createdAt: 1677755799857,
+        sendNewsletter: false
+      }
+    }
+  });
+  
+type FunSignature = (...args: any[]) => any;
+type ReturnType<F extends FunSignature> = F extends (...args: any) => infer R ? R : never;
+
+type PromiseFlatten<P> = P extends Promise<infer R> ? PromiseFlatten<R> : P;
+type AsyncReturnType<F extends FunSignature> = ReturnType<F> extends Promise<infer R> ? PromiseFlatten<R> : never;
+
+type Response = AsyncReturnType<typeof getUserMock>;
+//   {
+//     data: {
+//         1: {
+//             userName: string;
+//             password: string;
+//             email: string;
+//             company: string;
+//             phone: string;
+//             createdAt: number;
+//             sendNewsletter: boolean;
+//         };
+//     };
+// }
+```
+#### Asyncify
+Just using **parameters** is not ideal because it does not handle the **this** arg. If a function did not specify the this parameter, it will
+be inferred to `unknown`.
+
+```ts
+type FunSignature = (...args: any[]) => any;
+type isAny<T> = 0 extends 1 & T ? true : false;
+type IsUnknown<T> = isAny<T> extends false ? (unknown extends T ? true : false) : false;
+
+type Asyncify<F extends FunSignature> = F extends (this: infer ThisArg, ...args: infer Arg) => infer R
+    ? IsUnknown<ThisArg> extends true
+      ? (...args: Arg) => Promise<R>
+      : (this: ThisArg, ...args: Arg) => Promise<R>
+    : never;
+
+type LoggerFun = (entry: { message: string; level: 'Info' | 'Error' }) => void;
+type LoggerInfoFactory = () => { message: string; level: 'Info' };
+
+type LoggerFunAsync = Asyncify<LoggerFun>;
+//   (entry: {
+//     message: string;
+//     level: 'Info' | 'Error';
+// }) => Promise<void>
+
+type LoggerInfoFactoryAsync = Asyncify<LoggerInfoFactory>;
+// () => Promise<{
+//     message: string;
+//     level: 'Info';
+// }>
+```
+#### RecursivePartial
+Optional properties are also handled using this conditional : `R[K] extends object | undefined`.
+
+```ts
+type UserWithArray = { 1: { surname: string; activities: [1, 2, 3]; geo: { x: 1; y: 2 } } };
+type UserNested = { data: { user: { id: { name: 'joe'; attrs?: { name: string; age: 100 } } } } };
+
+type RecursivePartial<R> = {
+    [K in keyof R]?: R[K] extends object | undefined
+      ? RecursivePartial<R[K]>
+      : R[K] extends Array<infer V>
+      ? RecursivePartial<V>[]
+      : R[K];
+  } & {};
+
+type UserNestedPartial = RecursivePartial<UserNested>;
+
+const user: UserNestedPartial = { data: { user: { id: { attrs: {} } } } };
 ```
 
 
