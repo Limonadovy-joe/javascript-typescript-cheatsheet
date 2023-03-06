@@ -29,6 +29,8 @@
       - [AsyncReturnType](#AsyncReturnType)
       - [Asyncify](#Asyncify)
       - [RecursivePartial](#RecursivePartial)
+  - [Generics](#generics)
+    - [Domain modeling](#domain-modeling)   
 - [Testing static types](#testing-static-types)
   - [Simple solutions](#simple-solutions)
   - [Testing via code](#testing-via-code)
@@ -466,6 +468,48 @@ type UserNestedPartial = RecursivePartial<UserNested>;
 const user: UserNestedPartial = { data: { user: { id: { attrs: {} } } } };
 ```
 
+### Generics
+Generic function/class is function/class that is being able to work on a variety of types rather than a single one.
+
+#### Domain modeling
+Don`t overuse generics: **Every time you manually pass a static type as a parameter into a generics your code starts to smell.**
+
+Generics is usefull for some **general-purpose utility types** such as `Asyncify, RecursivePartital`. But you have to be carefull, **generics in your custom data model could add extra complexity**.
+
+Don`t: 
+
+```ts
+type UserFactory<T extends object> = { firstName: string; lastName: string } & T;
+type UserWithPhone = UserFactory<{phone: number}>;
+type UserWithEmail = UserFactory<{email: string}>;
+
+type User = UserWithPhone | UserWithEmail;
+```
+
+Do:
+
+```ts
+type UserName = {fistName: string; lastName: string};
+type UserWithPhone = UserName & {phone: number};
+type UserWithEmail = UserName & {email: string};
+type User = UserWithPhone | UserWithEmail;
+```
+
+Better, more detailed-types(high granularity - based on atomic attributes):
+
+```ts
+type FirstNamed = { firstName: string };
+type LastNamed = { lastName: string };
+type UserNamed = FirstNamed & LastNamed;
+
+type Phoned = { phone: number };
+type UserWithPhone = UserNamed & Phoned;
+
+type Emailed = {email: string};
+type UserWithEmail = UserNamed & Emailed;
+
+type User = UserWithPhone | UserWithEmail;
+```
 
 ## Testing static types
 When it comes to TypeScript code:
