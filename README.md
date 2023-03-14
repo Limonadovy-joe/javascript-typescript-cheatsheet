@@ -44,7 +44,7 @@
   - [Property 'x' has no initializer and is not assigned in the ctor?](#property-'x'-has-no-initializer-and-is-not-assigned-in-the-ctor)  
   - [How to use setter in ctors?](#how-to-use-setters-in-ctors)
 - [Refactoring](#refactoring)
-- [Functional programming using FP-TS](#Functional-programming-using-FP-TS)
+- [Functional programming](#Functional-programming)
 
 ## Enums
 ### The Basics
