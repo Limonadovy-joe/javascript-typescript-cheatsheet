@@ -793,10 +793,9 @@ const user = Object.fromEntries(userEntries);
 Creating own Helper object:
 
 ```ts
-const createObject = <T>(entries: T): FromEntriesReadonly<T> => Object.fromEntries as any;
-const ObjectHelper = { createObject };
+const ObjectHelper = { create: <T>(entries: T): FromEntriesReadonly<T> => Object.fromEntries as any };
 
-const userJoe = ObjectHelper.createObject(userEntries);
+const userJoe = ObjectHelper.create(userEntries);
 // const user: {
 //   username: 'joe';
 //   company: 'google';
