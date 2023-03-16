@@ -43,6 +43,7 @@
   - [How can i change readonly property in TS?](#how-can-i-change-readonly-property-in-ts)
   - [Property 'x' has no initializer and is not assigned in the ctor?](#property-'x'-has-no-initializer-and-is-not-assigned-in-the-ctor)  
   - [How to use setter in ctors?](#how-to-use-setters-in-ctors)
+  - [How to add types to Object.fromEntries?](#how-to-add-types-to-object.fromEntries)
 - [Refactoring](#refactoring)
 - [Functional programming](#Functional-programming)
 
@@ -729,6 +730,78 @@ export class EntryDate implements EntryDate {
   constructor(readonly message: string, readonly date: Date) {}
 ```
 In this case: its better to have own class that has the responsibility of tranforming object to string: 
+
+### How to add types to Object.fromEntries?
+
+V1: Refactor nested conditional types.
+
+```ts
+type WritableDeep<T> = { -readonly [K in keyof T]: WritableDeep<T[K]> };
+
+type RecordIndexTypes = string | number | symbol;
+type RecordKey<T> = T extends RecordIndexTypes ? T : never;
+
+type FromEntries<T> = T extends readonly [infer K, unknown][]
+  ? {
+      [K1 in RecordKey<K>]: T extends Array<infer Item>
+        ? Item extends [infer K2, infer V2]
+          ? K1 extends K2
+            ? V2
+            : never
+          : never
+        : never;
+    }
+  : never;
+
+type FromEntriesReadonly<T> = FromEntries<WritableDeep<T>>;
+```
+
+V2:
+```ts
+type Cast<X, Y> = X extends Y ? X : Y;
+type CastToString<T> = Cast<T, string>;
+
+export type FromEntries<T> = T extends readonly [infer K, unknown][]
+  ? { [K1 in CastToString<K>]: Extract<T[number], [K1, any]>[1] }
+  : never;
+```
+
+You can extend existing `fromEntries` method on global object `Object` or you can define your own helper object.
+
+Adding overload of `fromEntries` method in file:
+
+```ts
+declare global {
+  interface ObjectConstructor {
+    fromEntries<T>(entries: T): FromEntriesReadonly<T>;
+  }
+}
+
+
+const userEntries = [
+  ['username', 'joe'],
+  ['company', 'google']
+] as const;
+
+const user = Object.fromEntries(userEntries);
+// const user: {
+//   username: 'joe';
+//   company: 'google';
+// };
+```
+
+Creating own Helper object:
+
+```ts
+const createObject = <T>(entries: T): FromEntriesReadonly<T> => Object.fromEntries as any;
+const ObjectHelper = { createObject };
+
+const userJoe = ObjectHelper.createObject(userEntries);
+// const user: {
+//   username: 'joe';
+//   company: 'google';
+// };
+```
 
 
 ## Refactoring
