@@ -44,6 +44,7 @@
   - [Property 'x' has no initializer and is not assigned in the ctor?](#property-'x'-has-no-initializer-and-is-not-assigned-in-the-ctor)  
   - [How to use setter in ctors?](#how-to-use-setters-in-ctors)
   - [How to add types to Object.fromEntries?](#how-to-add-types-to-object.fromEntries)
+  - [Typescript Constructor Shorthand](#typescript-constructor-shorthand)
 - [Refactoring](#refactoring)
 - [Functional programming](#Functional-programming)
 
@@ -801,6 +802,59 @@ const userJoe = ObjectHelper.create(userEntries);
 //   company: 'google';
 // };
 ```
+
+### Typescript Constructor Shorthand
+This concept is called **parameter properties** and is created by prefixing a constructor argument with one of the access modifiers:
+`public`, `private`, `protected` or `readonly`. The resulting field gets those modifier(s):
+
+```ts
+class Entry {
+constructor(readonly message: string, readonly date: Date, readonly level: 'Debug' | 'Error') {}
+}
+```
+
+In case of extending abstract class, you need to call `super` in constructor method.
+
+```ts
+type Kind = 'Circle' | 'Rectangle';
+type Shape = Circle | Rectangle;
+
+    abstract class ShapeBase {
+      abstract readonly kind: Kind;
+      abstract area(): number;
+    }
+
+    class Circle extends ShapeBase {
+      readonly kind: 'Circle' = 'Circle';
+      constructor(readonly radius: number) {
+        super();
+      }
+      area(): number {
+        return Math.PI * this.radius ** 2;
+      }
+    }
+
+    class Rectangle extends ShapeBase {
+      readonly kind: 'Rectangle' = 'Rectangle';
+      constructor(readonly width: number, readonly height: number) {
+        super();
+      }
+      area(): number {
+        return this.width * this.height;
+      }
+    }
+
+    const printShape = (shape: Shape) => {
+      switch (shape.kind) {
+        case 'Circle':
+          console.log(`Circle: ${shape.radius}`);
+          break;
+        case 'Rectangle':
+          console.log(`Rectangle: ${(shape.width, shape.height)}`);
+      }
+    };
+```
+
 
 
 ## Refactoring
