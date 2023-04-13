@@ -2,6 +2,8 @@
 
 
 ## Contents
+- [Overloading](#overloading)
+  - [Overloading function declarations](#overloading-function-declarations)
 - [Enums](#enums)
   - [The basics](#the-basics)
   - [Enums at runtime](#enums-at-runtime)
@@ -47,6 +49,56 @@
   - [Typescript Constructor Shorthand](#typescript-constructor-shorthand)
 - [Refactoring](#refactoring)
 - [Functional programming](#Functional-programming)
+
+
+## Overloading
+Sometimes a single type signature does not adequately describe how a function works.
+
+### Overloading function declarations
+
+```ts
+interface Customer {
+      id: string;
+      fullName: string;
+    }
+
+    const joe: Customer = { id: '12345', fullName: 'Joe Novak' };
+    const jane: Customer = { id: '56789', fullName: 'Jane Novakova' };
+
+    const customerById = new Map<string, Customer>([
+      [joe.id, joe],
+      [jane.id, jane]
+    ]);
+
+    class UnknownIdError extends Error {}
+    class NotValidIdError extends Error {}
+
+    function getFullName(customer: Customer): string;
+    function getFullName(customer: Map<string, Customer>, id: string): string | UnknownIdError;
+    function getFullName(customer: Customer | Map<string, Customer>, id?: string): string | UnknownIdError {
+      if (customer instanceof Map) {
+        if (id) {
+          const customerUndefined = customer.get(id);
+          return customerUndefined !== undefined ? customerUndefined.fullName : new UnknownIdError(`Unknown id: ${id}`);
+        } else {
+          return new NotValidIdError(`Not valid id: ${id}`);
+        }
+      }
+      return customer.fullName;
+    }
+
+    deepStrictEqual(getFullName(jane), jane.fullName);
+    deepStrictEqual(getFullName(customerById, joe.id), joe.fullName);
+    deepStrictEqual(getFullName(customerById, ''), new NotValidIdError(`Not valid id: `));
+    deepStrictEqual(getFullName(customerById, '09876'), new UnknownIdError(`Unknown id: 09876`));
+```
+
+My advise is to only use **overloading** when it cannot`be  avoided. One alternative is to split an overloaded function into multiple functions with different names, for example: 
+```ts
+getFullName()
+getFullNameViaMap()
+getFullNameFromMap()
+```
 
 ## Enums
 ### The Basics
