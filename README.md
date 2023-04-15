@@ -74,8 +74,11 @@ interface Customer {
     class NotValidIdError extends Error {}
 
     function getFullName(customer: Customer): string;
-    function getFullName(customer: Map<string, Customer>, id: string): string | UnknownIdError;
-    function getFullName(customer: Customer | Map<string, Customer>, id?: string): string | UnknownIdError {
+    function getFullName(customer: Map<string, Customer>, id: string): string | UnknownIdError | NotValidIdError;
+    function getFullName(
+      customer: Customer | Map<string, Customer>,
+      id?: string
+    ): string | UnknownIdError | NotValidIdError {
       if (customer instanceof Map) {
         if (id) {
           const customerUndefined = customer.get(id);
@@ -86,6 +89,7 @@ interface Customer {
       }
       return customer.fullName;
     }
+
 
     deepStrictEqual(getFullName(jane), jane.fullName);
     deepStrictEqual(getFullName(customerById, joe.id), joe.fullName);
