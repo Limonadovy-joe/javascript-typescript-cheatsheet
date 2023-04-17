@@ -2,6 +2,8 @@
 
 
 ## Contents
+- [Advanced topics](#advanced-topics)
+  - [Mixins](#mixins) 
 - [Overloading](#overloading)
   - [Overloading function declarations](#overloading-function-declarations)
 - [Enums](#enums)
@@ -49,6 +51,20 @@
   - [Typescript Constructor Shorthand](#typescript-constructor-shorthand)
 - [Refactoring](#refactoring)
 - [Functional programming](#Functional-programming)
+
+
+## Advanced topics
+
+### Mixins
+Mixin is a class that contains methods for use by other classes without having to be the parent class of those other classes. How those other classes gain access to the mixin's methods depends on language. Mixins are sometimes described as being **'included'** rather than **`inherited`** .
+
+Mixins can be used to avoid multiple inheritance(the diamond problem) or to **work around lack of support multiple inheritance**. Mixins can also be viewed as a **interface with implemented methods**. This pattern is an example of **dependency inversion principle**.
+
+Example:
+```ts
+
+
+```
 
 
 ## Overloading
