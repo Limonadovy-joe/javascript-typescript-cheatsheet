@@ -51,6 +51,7 @@
   - [Typescript Constructor Shorthand](#typescript-constructor-shorthand)
 - [Refactoring](#refactoring)
 - [Functional programming](#Functional-programming)
+- 
 
 
 ## Advanced topics
@@ -60,11 +61,38 @@ Mixin is a class that contains methods for use by other classes without having t
 
 Mixins can be used to avoid multiple inheritance(the diamond problem) or to **work around lack of support multiple inheritance**. Mixins can also be viewed as a **interface with implemented methods**. This pattern is an example of **dependency inversion principle**.
 
-Example:
+Typescript 4.2 adds support for declaring that the constructor function is abstract. This is mostly used by people who use the mixin pattern.
+
+```ts
+type AbstractConstructor<T> = abstract new (...args: unknown[]) => T;
+```
+
+In case you have a constructor function in mixin, there is an error:
+
 ```ts
 
+    abstract class Validator {
+      static isValid: (u: unknown) => boolean;
+    }
 
+    type AbstractConstructor<T> = abstract new (...args: unknown[]) => T;
+
+    function WithDataAccessor<AbstractClass extends AbstractConstructor<object>>(abstractClass: AbstractClass) {
+    //  Error - A mixin class must have a constructor with a single rest parameter of type 'any[]'.ts(2545
+      abstract class DataAccessor extends abstractClass {
+        private _value: string;
+        abstract get value(): unknown;
+
+        constructor(value: string){
+          super();
+          this._value = value;
+        }
+      }
+      return DataAccessor;
+    }
 ```
+**A mixin class must have a constructor with a single rest parameter of type 'any[]'.ts(2545)**
+[Issue](https://github.com/microsoft/TypeScript/issues/37142)
 
 
 ## Overloading
