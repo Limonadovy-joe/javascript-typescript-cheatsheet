@@ -2,6 +2,7 @@
 
 
 ## Contents
+- [Buglist](#buglist)
 - [Advanced topics](#advanced-topics)
   - [Mixins](#mixins) 
 - [Overloading](#overloading)
@@ -53,6 +54,10 @@
 - [Functional programming](#Functional-programming)
 - 
 
+## Buglist
+| Error description | Link |
+| ----------- | ----------- |
+| **A mixin class must have a constructor with a single rest parameter of type 'any[]'.ts(2545)** | [Issue](https://github.com/microsoft/TypeScript/issues/37142) |
 
 ## Advanced topics
 
