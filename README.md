@@ -96,26 +96,25 @@ interface Customer {
     ]);
 
     class UnknownIdError extends Error {}
-    class NotValidIdError extends Error {}
+    class InvalidFormatIdError extends Error {}
 
     function getFullName(customer: Customer): string;
-    function getFullName(customer: Map<string, Customer>, id: string): string | UnknownIdError | NotValidIdError;
+    function getFullName(customer: Map<string, Customer>, id: string): string | UnknownIdError | InvalidFormatIdError;
     function getFullName(
       customer: Customer | Map<string, Customer>,
       id?: string
-    ): string | UnknownIdError | NotValidIdError {
+    ): string | UnknownIdError | InvalidFormatIdError {
       if (customer instanceof Map) {
         if (id) {
           const customerUndefined = customer.get(id);
           return customerUndefined !== undefined ? customerUndefined.fullName : new UnknownIdError(`Unknown id: ${id}`);
         } else {
-          return new NotValidIdError(`Not valid id: ${id}`);
+          return new InvalidFormatIdError(`Not valid id: ${id}`);
         }
       }
       return customer.fullName;
     }
-
-
+    
     deepStrictEqual(getFullName(jane), jane.fullName);
     deepStrictEqual(getFullName(customerById, joe.id), joe.fullName);
     deepStrictEqual(getFullName(customerById, ''), new NotValidIdError(`Not valid id: `));
