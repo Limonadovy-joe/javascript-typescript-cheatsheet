@@ -80,6 +80,7 @@ type AbstractConstructor<T> = abstract new (...args: unknown[]) => T;
 Sometimes a single type signature does not adequately describe how a function works.
 
 ### Overloading function declarations
+Imperative approach:
 
 ```ts
 interface Customer {
@@ -139,6 +140,71 @@ My advise is to only use **overloading** when it cannot`be  avoided. One alterna
 getFullName()
 getFullNameViaMap()
 getFullNameFromMap()
+```
+
+Functional approach:
+
+```ts
+interface Customer {
+      id: string;
+      fullName: string;
+    }
+
+    const joe: Customer = { id: '12345', fullName: 'Joe Novak' };
+    const jane: Customer = { id: '56789', fullName: 'Jane Novakova' };
+
+    const customerById = new Map<string, Customer>([
+      [joe.id, joe],
+      [jane.id, jane]
+    ]);
+
+    class UnknownIdError extends Error {}
+    class InvalidFormatIdError extends Error {}
+    class UndefinedIdError extends Error {}
+
+    //  Helper functions - validators
+    const getCustomerById = M.lookup<string>({ equals: (s1, s2) => s1 === s2 });
+
+    const validateIdFormat = E.fromPredicate(
+      (u) => typeof u === 'string' && u.length > 0,
+      (u) => new InvalidFormatIdError(`Not valid id: ${u}`)
+    );
+
+    const validateId = (id: string | undefined) =>
+      pipe(id, E.fromNullable(new UndefinedIdError(`Id is undefined.`)), E.chainW(validateIdFormat));
+
+    function getFullName(customer: Customer): string;
+    function getFullName(
+      customer: Map<string, Customer>,
+      id: string
+    ): string | UnknownIdError | InvalidFormatIdError | UndefinedIdError;
+    function getFullName(customer: Customer | Map<string, Customer>, id?: string) {
+      if (!(customer instanceof Map)) return customer.fullName;
+
+      return pipe(
+        id,
+        validateId,
+        E.chainW((id) =>
+          pipe(
+            customer,
+            E.fromOptionK(() => new UnknownIdError(`Unknown id: ${id}`))(getCustomerById(id)),
+            E.map((c) => c.fullName)
+          )
+        ),
+        E.foldW(identity, identity)
+      );
+    }
+
+    const customerAsAny: Customer | Map<string, Customer> = customerById;
+
+    deepStrictEqual(getFullName(jane), jane.fullName);
+    deepStrictEqual(getFullName(customerById, joe.id), joe.fullName);
+
+    //  Edge case
+    deepStrictEqual(getFullName(customerAsAny as any, undefined as any), new UndefinedIdError(`Id is undefined.`));
+
+    deepStrictEqual(getFullName(customerById, ''), new InvalidFormatIdError(`Not valid id: `));
+    deepStrictEqual(getFullName(customerById, '09876'), new UnknownIdError(`Unknown id: 09876`));
 ```
 
 ## Enums
