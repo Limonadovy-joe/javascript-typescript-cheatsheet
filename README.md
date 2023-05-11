@@ -95,29 +95,42 @@ interface Customer {
       [jane.id, jane]
     ]);
 
+
     class UnknownIdError extends Error {}
     class InvalidFormatIdError extends Error {}
+    class UndefinedIdError extends Error {}
 
     function getFullName(customer: Customer): string;
-    function getFullName(customer: Map<string, Customer>, id: string): string | UnknownIdError | InvalidFormatIdError;
+    function getFullName(
+      customer: Map<string, Customer>,
+      id: string
+    ): string | UnknownIdError | InvalidFormatIdError | UndefinedIdError;
     function getFullName(
       customer: Customer | Map<string, Customer>,
       id?: string
-    ): string | UnknownIdError | InvalidFormatIdError {
+    ): string | UnknownIdError | InvalidFormatIdError | UndefinedIdError {
       if (customer instanceof Map) {
         if (id) {
+          if (id.length === 0) return new InvalidFormatIdError(`Not valid id: ${id}`);
+
           const customerUndefined = customer.get(id);
           return customerUndefined !== undefined ? customerUndefined.fullName : new UnknownIdError(`Unknown id: ${id}`);
         } else {
-          return new InvalidFormatIdError(`Not valid id: ${id}`);
+          return new UndefinedIdError(`Not valid id: ${id}`);
         }
       }
       return customer.fullName;
     }
-    
+
+    const customerAsAny: Customer | Map<string, Customer> = customerById;
+
     deepStrictEqual(getFullName(jane), jane.fullName);
     deepStrictEqual(getFullName(customerById, joe.id), joe.fullName);
-    deepStrictEqual(getFullName(customerById, ''), new NotValidIdError(`Not valid id: `));
+
+    //  Edge case
+    deepStrictEqual(getFullName(customerAsAny as any, undefined as any), new UndefinedIdError(`Id is undefined.`));
+
+    deepStrictEqual(getFullName(customerById, ''), new InvalidFormatIdError(`Not valid id: `));
     deepStrictEqual(getFullName(customerById, '09876'), new UnknownIdError(`Unknown id: 09876`));
 ```
 
