@@ -116,7 +116,7 @@ interface Customer {
           const customerUndefined = customer.get(id);
           return customerUndefined !== undefined ? customerUndefined.fullName : new UnknownIdError(`Unknown id: ${id}`);
         } else {
-          return new UndefinedIdError(`Not valid id: ${id}`);
+          return new UndefinedIdError(`Id is undefined.`);
         }
       }
       return customer.fullName;
