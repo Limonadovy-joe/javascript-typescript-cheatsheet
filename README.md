@@ -7,6 +7,7 @@
   - [Mixins](#mixins) 
 - [Overloading](#overloading)
   - [Overloading function declarations](#overloading-function-declarations)
+  - [Overloading via interfaces](#overloading-via-interfaces)
 - [Enums](#enums)
   - [The basics](#the-basics)
   - [Enums at runtime](#enums-at-runtime)
@@ -206,6 +207,71 @@ interface Customer {
     deepStrictEqual(getFullName(customerById, ''), new InvalidFormatIdError(`Not valid id: `));
     deepStrictEqual(getFullName(customerById, '09876'), new UnknownIdError(`Unknown id: 09876`));
 ```
+
+
+### Overloading via interfaces
+In interfaces, we can have multiple, diferrent call signatures. That enables us to use the interface.
+
+Imperative approach:
+```ts
+interface Customer {
+      id: string;
+      fullName: string;
+    }
+
+    type Customers = Map<string, Customer>;
+
+    const joe: Customer = { id: '12345', fullName: 'Joe Novak' };
+    const jane: Customer = { id: '56789', fullName: 'Jane Novakova' };
+
+    const customerById = new Map<string, Customer>([
+      [joe.id, joe],
+      [jane.id, jane]
+    ]);
+
+    class IdUnknownError extends Error {}
+    class IdInvalidFormatError extends Error {}
+    class IdUndefinedError extends Error {}
+
+    interface GetFullName {
+      (customer: Customer): string;
+      (customer: Customers, id: string): IdUndefinedError | IdInvalidFormatError | IdUnknownError | string;
+    }
+
+    //  global utils function
+    const isInstanceOfMap = <K extends unknown, V extends unknown>(u: unknown): u is Map<K, V> => u instanceof Map;
+
+    //  local utils
+    const isIdFormatValid = (s: string) => s.length > 0;
+    const getCustomer = (customers: Customers, id: string) => customers.get(id);
+
+    const getFullName: GetFullName = (customer: Customer | Customers, id?: string) => {
+      if (!isInstanceOfMap(customer)) return customer.fullName;
+
+      if (id !== undefined) {
+        if (!isIdFormatValid(id)) throw new IdInvalidFormatError(`${id} has invalid format.`);
+
+        const customerRes = getCustomer(customer, id);
+        if (customerRes === undefined) throw new IdUnknownError(`Unknown id: ${id}`);
+
+        return customerRes.fullName;
+      } else {
+        throw new IdUndefinedError();
+      }
+    };
+
+    const customerAsAny: Customer | Map<string, Customer> = customerById;
+
+    deepStrictEqual(getFullName(jane), jane.fullName);
+    deepStrictEqual(getFullName(customerById, joe.id), joe.fullName as any);
+
+    // //  Edge case
+    deepStrictEqual(getFullName(customerAsAny as any, undefined as any), new IdUndefinedError(`Id is undefined.`));
+
+    deepStrictEqual(getFullName(customerById, ''), new IdInvalidFormatError(`Not valid id: `));
+    deepStrictEqual(getFullName(customerById, '09876'), new IdUnknownError(`Unknown id: 09876`));
+```
+
 
 ## Enums
 ### The Basics
