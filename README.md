@@ -8,6 +8,7 @@
 - [Overloading](#overloading)
   - [Overloading function declarations](#overloading-function-declarations)
   - [Overloading via interfaces](#overloading-via-interfaces)
+  - [Overloading on string params - event handling](#overloading-on-string-params-event-handling)
 - [Enums](#enums)
   - [The basics](#the-basics)
   - [Enums at runtime](#enums-at-runtime)
@@ -539,6 +540,82 @@ Functional approach:
      Received: [[Error: Id is not valid, id must contain numeric chars, actual value: ""], [Error: String can not be empty, actual value: ""]]
   */
 ```
+
+### Overloading on string params event-handling
+Overload and use **string literal type such as ('click')**. That allows use to change the type of parameter `listener` depending on the value of parameter type.
+
+```ts
+// Using function declaration and overloading
+    interface MouseEvent {
+      mouseCoords: {
+        x: number;
+        y: number;
+      };
+    }
+
+    interface KeyboardEvent {
+      isKeyPressed: (key: string) => boolean;
+      key: string;
+    }
+
+    type HtmlInputEvents = MouseEvent | KeyboardEvent;
+
+    interface HTMLInputListenable {
+      value: unknown;
+      attachListener: (type: EventType, cb: (event: HtmlInputEvents) => void) => void;
+    }
+
+    class HTMLInputElement implements HTMLInputListenable {
+      constructor(public value: unknown) {}
+
+      attachListener: (type: 'click' | 'keypress', cb: (event: MouseEvent | KeyboardEvent) => void) => void = (
+        type,
+        cb
+      ) => {
+        const mouseEventDef: MouseEvent = { mouseCoords: { x: 0, y: 0 } };
+        const toJson = JSON.stringify;
+
+        return type === 'click'
+          ? cb(mouseEventDef)
+          : cb({ key: toJson(this.value), isKeyPressed: (str) => str === toJson(this.value) });
+      };
+    }
+
+    type EventClick = 'click';
+    type EventKeypress = 'keypress';
+    type EventType = EventClick | EventKeypress;
+
+
+    function addEventListenerCurried(
+      type: EventClick,
+      listener: (event: MouseEvent) => void
+    ): (elem: HTMLInputListenable) => HTMLInputListenable;
+    function addEventListenerCurried(
+      type: EventKeypress,
+      listener: (event: KeyboardEvent) => void
+    ): (elem: HTMLInputListenable) => HTMLInputListenable;
+    function addEventListenerCurried(
+      type: EventClick | EventKeypress,
+      listener: (event: any) => void // (A)
+    ): (elem: HTMLInputListenable) => HTMLInputListenable {
+      return (elem) => {
+        elem.attachListener(type, listener);
+        return elem;
+      };
+    }
+
+    // A - It is relatively difficult to correctly type this parameter
+
+    const createHtmlInputElement = (value: unknown) => new HTMLInputElement(value);
+
+    const CurrencyInputListenable = pipe(
+      '100$',
+      createHtmlInputElement,
+      addEventListenerCurried('click', (mouseEvent) => console.log('mouse event fired:', mouseEvent))
+    );
+
+```
+
 
 ## Enums
 ### The Basics
