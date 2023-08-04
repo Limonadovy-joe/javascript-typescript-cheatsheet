@@ -534,6 +534,10 @@ Functional approach:
     expect.arrayContaining(expected);
 
     expect(getFullName(customerById, IdMock)).toEqual(expect.arrayContaining(expected)); // true
+
+    /** Expected: ArrayContaining [[Error: Id is not valid, id must contain numeric chars, actual value: ""], [Error: String can     not be empty, actual value: ""]]
+     Received: [[Error: Id is not valid, id must contain numeric chars, actual value: ""], [Error: String can not be empty, actual value: ""]]
+  */
 ```
 
 ## Enums
