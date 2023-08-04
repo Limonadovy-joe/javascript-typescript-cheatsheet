@@ -272,6 +272,269 @@ interface Customer {
     deepStrictEqual(getFullName(customerById, '09876'), new IdUnknownError(`Unknown id: 09876`));
 ```
 
+Functional approach:
+```ts
+//  Using io-ts and branded types to ensure correctness of types
+//  Experimental modules were used in app, version 2.2+
+
+    //  Branded types
+    interface NonEmptyStringBrand {
+      readonly NonEmptyString: unique symbol;
+    }
+    type NonEmptyString = string & NonEmptyStringBrand;
+
+    const NonEmptyString = pipe(
+      D.string,
+      D.refine((s): s is NonEmptyString => s.length > 0, 'NonEmptyString')
+    );
+
+    interface TrimmedStringBrand {
+      readonly TrimmedString: unique symbol;
+    }
+    type TrimmedString = string & TrimmedStringBrand;
+
+    const TrimmedString = pipe(
+      D.string,
+      D.refine((s): s is TrimmedString => s.trim().length === s.length, 'TrimmedString')
+    );
+
+    type NonEmptyTrimmedString = D.TypeOf<typeof NonEmptyTrimmedString>;
+    const NonEmptyTrimmedString = D.intersect(NonEmptyString)(TrimmedString);
+
+    interface IdStringBrand {
+      readonly IdString: unique symbol;
+    }
+    type IdString = string & IdStringBrand;
+    /**
+     * IdString does format validation
+     */
+    const IdString = pipe(
+      D.string,
+      D.refine((s): s is IdString => /^[0-9]+$/.test(s), 'IdString')
+    );
+
+//  Domain types
+
+    /**
+     * Id decoder
+     */
+    type Id = D.TypeOf<typeof Id>;
+    const Id = D.intersect(NonEmptyTrimmedString)(IdString);
+
+    /**
+     * Customer decoder
+     */
+    const Customer = D.struct({ id: Id, fullName: D.string });
+
+    type Customer = D.TypeOf<typeof Customer>;
+    
+    // Branded types should only be created via decode method, these objects
+    //  are crafted for testing purposes
+    const joe: Customer = { id: '12345' as Id, fullName: 'Joe Novak' };
+    const jane: Customer = { id: '56789' as Id, fullName: 'Jane Novakova' };
+
+    const customerById = new Map<string, Customer>([
+      [joe.id, joe],
+      [jane.id, jane]
+    ]);
+
+    //  These type predicates should be imported from utils module
+    const isMap = <K, V>(i: unknown): i is Map<K, V> => i instanceof Map;
+
+    const MapDec = D.fromRefinement<unknown, Map<unknown, unknown>>(isMap, 'map');
+
+/**
+     * Customers decoder
+     */
+    const Customers: D.Decoder<unknown, Map<string, Customer>> = {
+      decode: (i) =>
+        pipe(
+          i,
+          MapDec.decode,
+          E.map((map) =>
+            pipe(
+              Array.from(map),
+              A.map(([key, value]) => pipe(sequenceT(E.Applicative)(D.string.decode(key), Customer.decode(value))))
+            )
+          ),
+          E.chain(E.sequenceArray),
+          E.map((arr) => new Map(arr))
+        )
+    };
+
+    type Customers = D.TypeOf<typeof Customers>;
+
+// Error Domain types
+
+    //  Errors related to Id
+    class IdUnknownError extends Error {}
+    class IdInvalidFormatError extends Error {}
+
+    class EmptyStringError extends Error {}
+    class NonTrimmedStringError extends Error {}
+
+    const IdErrorsRecord = {
+      NonEmptyString: {
+        name: 'NonEmptyString',
+        defaultMessage: 'String can not be empty',
+        makeError: (message: string) => new EmptyStringError(message)
+      },
+      TrimmedString: {
+        name: 'TrimmedString',
+        defaultMessage: 'Please remove leading and trailing whitespaces',
+        makeError: (message: string) => new NonTrimmedStringError(message)
+      },
+      IdString: {
+        name: 'IdString',
+        defaultMessage: 'Id is not valid, id must contain numeric chars',
+        makeError: (message: string) => new IdInvalidFormatError(message)
+      },
+      IdUnknown: {
+        name: 'IdUnknownError',
+        defaultMessage: 'Id is not defined or does not exist',
+        makeError: (message: string) => new IdUnknownError(message)
+      }
+    } as const;
+
+    type IdErrorsRecord = typeof IdErrorsRecord;
+
+    type IdErrorsMapper<T extends IdErrorsRecord, P1 extends keyof T = keyof T, ME = 'makeError'> = {
+      [P2 in keyof T[P1] as P2 extends ME ? P2 : never]: T[P1][P2] extends (...args: any) => any
+        ? ReturnType<T[P1][P2]>
+        : never;
+    };
+    type IdErrors = IdErrorsMapper<IdErrorsRecord>['makeError'];
+
+    //  TODO
+    //  remove keyof operator
+    const createDefaultError = <ET extends keyof typeof IdErrorsRecord>(errorType: ET) => {
+      const { makeError, defaultMessage } = IdErrorsRecord[errorType];
+      return makeError(defaultMessage);
+    };
+    // const createDefaultIdStringError = () => createDefaultError('IdString');
+    const createDefaultIdUnknownError = () => createDefaultError('IdUnknown');
+
+    const createIdErrorMessage = (value: string) => (message: string) => `${message}, actual value: ${value}`;
+
+    const splitString = (pattern: RegExp | string) => (string: string) => string.split(pattern);
+    const splitByNewLine = splitString(/\n/);
+    const splitByComma = splitString(',');
+
+    const extractErrorString = (str: string) => str.substring(str.lastIndexOf(' ')).trim();
+
+    const splitToErrorMessages = (errors: D.DecodeError) =>
+      pipe(
+        errors,
+        D.draw,
+        splitByNewLine,
+        A.map(splitByComma),
+        A.map(flow(A.map(extractErrorString), ([value, key]) => [key, value]))
+      );
+
+    const transformToIdErrors = (idErrorsRecord: IdErrorsRecord) =>
+      flow(
+        splitToErrorMessages,
+        Nea.fromArray,
+        O.chain((nea) =>
+          pipe(
+            nea,
+            Nea.map(([errorName, value]) =>
+              pipe(
+                Rec.lookup(errorName, idErrorsRecord),
+                O.map(({ makeError, defaultMessage }) =>
+                  pipe(defaultMessage, createIdErrorMessage(value), (msg) => makeError(msg))
+                )
+              )
+            ),
+            Nea.sequence(O.Applicative)
+          )
+        ),
+        O.foldW(
+          () =>
+            [new Error('Error occur during transforming DecodeError to IdErrorsRecord')] as Nea.NonEmptyArray<Error>,
+          identity
+        )
+      );
+
+    /**
+     * Type definition
+     */
+    type CustomerOrCustomers =
+      | { readonly _tag: 'Customer'; readonly value: Customer }
+      | { readonly _tag: 'Customers'; readonly value: Customers };
+
+    /**
+     * Constructors
+     */
+    const createCustomerWithTag = (c: Customer): CustomerOrCustomers => ({ _tag: 'Customer', value: c });
+    const createCustomersWithTag = (cs: Customers): CustomerOrCustomers => ({ _tag: 'Customers', value: cs });
+
+    /**
+     * Fold handler
+     */
+    const foldCustomerOrCustomers =
+      <A>(onCustomer: (c: Customer) => A, onCustomers: (cs: Customers) => A) =>
+      (c: CustomerOrCustomers): A => {
+        switch (c._tag) {
+          case 'Customer':
+            return onCustomer(c.value);
+          case 'Customers':
+            return onCustomers(c.value);
+        }
+      };
+
+    const CustomerOrCustomers = pipe(
+      D.union(Customers, Customer),
+      D.map((obj) => (obj instanceof Map ? createCustomersWithTag(obj) : createCustomerWithTag(obj)))
+    );
+
+    interface GetFullName {
+      (customer: Customer): Nea.NonEmptyArray<IdErrors> | string;
+      (customer: Customers, id: string): Nea.NonEmptyArray<IdErrors> | string;
+    }
+
+    const getFullName: GetFullName = (customer: Customer | Customers, id?: string) =>
+      pipe(
+        customer,
+        CustomerOrCustomers.decode,
+        E.chainW(
+          foldCustomerOrCustomers(
+            ({ fullName }) => E.right(fullName),
+            (customersValidated) => {
+              const getCustomer = M.lookup<string>({ equals: (x, y) => x === y });
+
+              return pipe(
+                id,
+                Id.decode,
+                E.chainW((id) => pipe(customersValidated, getCustomer(id), E.fromOption(createDefaultIdUnknownError))),
+                E.map(({ fullName }) => fullName)
+              );
+            }
+          )
+        ),
+        E.foldW(
+          (e) =>
+            !(e instanceof Error) ? transformToIdErrors(IdErrorsRecord)(e) : ([e] as Nea.NonEmptyArray<IdErrors>),
+          (str) => str
+        )
+      );
+
+    /**
+     * Utility getter to get default IdError message
+     */
+    const getIdErrorDefaultMessage = (errorName: keyof IdErrorsRecord) => IdErrorsRecord[errorName].defaultMessage;
+
+    const IdMock = '';
+    const IdMockStringified = JSON.stringify(IdMock);
+
+    const expected = [
+      new IdInvalidFormatError(createIdErrorMessage(IdMockStringified)(getIdErrorDefaultMessage('IdString'))),
+      new NonTrimmedStringError(createIdErrorMessage(IdMockStringified)(getIdErrorDefaultMessage('NonEmptyString')))
+    ];
+    expect.arrayContaining(expected);
+
+    expect(getFullName(customerById, IdMock)).toEqual(expect.arrayContaining(expected)); // true
+```
 
 ## Enums
 ### The Basics
