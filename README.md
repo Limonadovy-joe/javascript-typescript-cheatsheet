@@ -9,6 +9,8 @@
   - [Overloading function declarations](#overloading-function-declarations)
   - [Overloading via interfaces](#overloading-via-interfaces)
   - [Overloading on string params - event handling](#overloading-on-string-params-event-handling)
+  - [Overloading concrate methods](#overloading-concrate-methods)
+  - [Overloading interface methods](#overloading-interface-methods)
 - [Enums](#enums)
   - [The basics](#the-basics)
   - [Enums at runtime](#enums-at-runtime)
@@ -614,6 +616,82 @@ Overload and use **string literal type such as ('click')**. That allows use to c
       addEventListenerCurried('click', (mouseEvent) => console.log('mouse event fired:', mouseEvent))
     );
 
+```
+
+### Overloading concrate methods
+
+```ts
+type MapFun<I, O> = (u: I) => O;
+
+    
+
+
+    class StringHelper {
+      toString(v: boolean, map: MapFun<boolean, string>): string;
+      toString(v: number, map: MapFun<number, string>): string;
+      toString(v: string): string;
+      toString(v: boolean | number | string, map?: MapFun<any, string>): string {
+        if (typeof v === 'boolean' || typeof v === 'number') {
+          if (map) map(v);
+        } else {
+          return v;
+        }
+        return `${v}`;
+      }
+    }
+
+    
+
+    const test1 = new StringHelper().toString(1, (v) => `${v}`);
+    const test2 = new StringHelper().toString(true, (v) => `${v}`);
+    const test3 = new StringHelper().toString('test3');
+
+    deepStrictEqual(test1, `${1}`);
+    deepStrictEqual(test2, `${true}`);
+    deepStrictEqual(test3, `test3`);
+```
+
+### Overloading interface methods
+
+```ts
+
+    type MapFun<I, O> = (u: I) => O;
+
+    interface Stringable {
+      toString(v: boolean, mapfn: MapFun<boolean, string>): string;
+      toString(v: number, mapfn: MapFun<number, string>): string;
+      toString(v: string): string;
+    }
+
+    const isBoolean = (u: unknown): u is boolean => typeof u === 'boolean';
+    const isNumber = (u: unknown): u is number => typeof u === 'number';
+    const isFunction = (u: unknown): u is Function => typeof u === 'function';
+    const isString = (u: unknown): u is string => typeof u === 'string';
+
+    const isBooleanOrNumber = (u: unknown): u is boolean | number => isBoolean(u) || isNumber(u);
+
+    class StringHelper implements Stringable {
+      toString(v: boolean, mapfn: (u: boolean) => string): string;
+      toString(v: number, mapfn: (u: number) => string): string;
+      toString(v: string): string;
+      toString(v: unknown, mapfn?: unknown): string {
+        if (isBooleanOrNumber(v)) {
+          if (isFunction(mapfn)) return mapfn(v);
+        } else if (isString(v)) {
+          return v;
+        }
+
+        return `${v}`;
+      }
+    }
+
+    const test1 = new StringHelper().toString(1, (v) => `${v}`);
+    const test2 = new StringHelper().toString(true, (v) => `${v}`);
+    const test3 = new StringHelper().toString('test3');
+
+    deepStrictEqual(test1, `${1}`);
+    deepStrictEqual(test2, `${true}`);
+    deepStrictEqual(test3, `test3`);
 ```
 
 
